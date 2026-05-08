@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"[github.com/ras0q/noy](https://github.com/ras0q/noy)"
+	"github.com/ras0q/noy"
 )
 
 type State struct {
