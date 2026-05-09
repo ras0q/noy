@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"net/http"
 
 	"github.com/ras0q/noy"
+	"github.com/ras0q/noy/noymw"
 )
 
 // State holds request-local state.
@@ -34,19 +36,29 @@ func authMiddleware(next noy.HandlerFunc[State]) noy.HandlerFunc[State] {
 	}
 }
 
+func loggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Received request", "method", r.Method, "path", r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	mux := noy.NewServeMux[State]()
-
 	h := &Handler{}
+	middlewares := noymw.Chain(
+		authMiddleware,
+		noymw.FromStd[State](loggerMiddleware),
+	)
 
-	mux.HandleFunc("/", authMiddleware(h.Index))
+	mux.HandleFunc("/", middlewares(h.Index))
 	{
 		usersMux := noy.NewServeMux[State]()
-		usersMux.HandleFunc("/users/{username}", authMiddleware(h.GetUser))
+		usersMux.HandleFunc("/users/{username}", middlewares(h.GetUser))
 
 		mux.Handle("/users/", usersMux)
 	}
 
-	fmt.Println("Server listening on http://localhost:8080")
+	slog.Info("Server starting", "address", ":8080")
 	http.ListenAndServe(":8080", mux)
 }
