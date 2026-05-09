@@ -31,4 +31,8 @@ func (m *ServeMux[State]) HandleFunc(pattern string, handler HandlerFunc[State])
 	})
 }
 
+func (m *ServeMux[State]) HandleStdFunc(pattern string, handler http.HandlerFunc) {
+	m.mux.HandleFunc(pattern, handler)
+}
+
 type HandlerFunc[State any] func(state *State, w http.ResponseWriter, r *http.Request)
